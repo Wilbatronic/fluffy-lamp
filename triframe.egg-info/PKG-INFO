@@ -1,3 +1,17 @@
+Metadata-Version: 2.4
+Name: triframe
+Version: 0.1.0
+Summary: TriFrame: A Frame-Resolving Model for Assembly-Free Metagenomic Functional Annotation
+License-Expression: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: biopython>=1.80
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+
 # TriFrame: Assembly-Free Metagenomic Functional Annotation
 
 TriFrame is a deep learning model that takes raw metagenomic DNA reads (150–300 bp) and directly predicts functional annotations — EC numbers, KEGG orthologs, and COG categories — without requiring assembly, ORF prediction, or database alignment. The key challenge is that a random metagenomic read could originate from any of six reading frames (3 forward + 3 reverse complement) and may not even be protein-coding. TriFrame addresses this with two novel architectural components: **Frame Attention with Gating**, which learns to identify the correct coding frame(s), and **Cross-Resolution Attention**, which fuses nucleotide-level compositional signals with codon-level protein function signals at different granularities.

@@ -1,0 +1,25 @@
+[project]
+name = "triframe"
+version = "0.1.0"
+description = "TriFrame: A Frame-Resolving Model for Assembly-Free Metagenomic Functional Annotation"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "pyyaml>=6.0",
+    "biopython>=1.80",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["triframe*"]

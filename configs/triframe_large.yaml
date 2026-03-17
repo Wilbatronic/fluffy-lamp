@@ -1,0 +1,20 @@
+# TriFrame-Large: ~162M parameters
+d_nucleotide: 512
+n_nuc_layers: 12
+nuc_kernel_size: 7
+max_read_length: 2048
+d_frame: 768
+n_frame_layers: 8
+n_frame_heads: 12
+d_ff_ratio: 4
+max_aa_length: 512
+n_frame_attn_layers: 4
+n_fusion_layers: 4
+n_ec_level1: 7
+n_ec_level2: 68
+n_ec_level3: 264
+n_ec_level4: 5000
+n_kegg_orthologs: 25000
+n_cog_categories: 26
+dropout: 0.1
+num_frames: 6
