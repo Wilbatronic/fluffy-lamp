@@ -367,3 +367,48 @@ class TestTrainingStep:
 
         # Optimizer step
         optimizer.step()
+
+    def test_loss_with_small_config(self):
+        """Test loss with TriFrameConfig.small() (n_kegg_orthologs=5000).
+
+        This verifies the fix for the KEGG/COG target size mismatch bug.
+        The loss should infer target size from predictions, not use a default.
+        """
+        config = TriFrameConfig.small()
+        model = TriFrameModel(config)
+
+        # Create loss without matching config parameters
+        # The loss should infer the correct sizes from predictions
+        loss_fn = TriFrameLoss()
+
+        batch_size = 2
+        seq_len = 100
+        nucleotide_ids = torch.randint(0, 5, (batch_size, seq_len))
+        lengths = torch.tensor([seq_len, seq_len])
+
+        # Labels with KEGG and COG
+        labels = {
+            "is_coding": torch.tensor([1, 0]),
+            "reading_frame": torch.tensor([0, -1]),
+            "ec_number": ["1.2.3.4", ""],
+            "kegg_ko": ["K00001,K00002", ""],  # Multiple KEGG IDs
+            "cog_category": ["C,G", ""],  # Multiple COG categories
+        }
+
+        # Forward pass
+        predictions = model(nucleotide_ids, lengths)
+
+        # Verify model predictions have the expected shapes
+        assert predictions["kegg_logits"].shape == (batch_size, config.n_kegg_orthologs)
+        assert predictions["cog_logits"].shape == (batch_size, config.n_cog_categories)
+
+        # This should NOT raise a size mismatch error
+        # (previously: ValueError: Target size must be the same as input size)
+        loss, loss_components = loss_fn(predictions, labels)
+
+        assert isinstance(loss, torch.Tensor)
+        assert loss.ndim == 0
+
+        # KEGG and COG losses should be computed (labels present for sample 0)
+        assert loss_components["kegg"].item() > 0
+        assert loss_components["cog"].item() > 0

@@ -76,44 +76,46 @@ class TriFrameLoss(nn.Module):
         return levels
 
     def _parse_kegg_labels(
-        self, kegg_strings: list[str], device: torch.device
+        self, kegg_strings: list[str], device: torch.device, n_kegg: int
     ) -> torch.Tensor:
         """Parse KEGG KO strings into multi-hot tensor.
 
         Args:
             kegg_strings: List of KEGG strings like "K00844,K00845" or "".
             device: Target device for the tensor.
+            n_kegg: Number of KEGG orthologs (inferred from predictions).
 
         Returns:
             (batch, n_kegg) multi-hot float tensor.
         """
         batch_size = len(kegg_strings)
-        targets = torch.zeros(batch_size, self.n_kegg, dtype=torch.float, device=device)
+        targets = torch.zeros(batch_size, n_kegg, dtype=torch.float, device=device)
 
         for i, ko_str in enumerate(kegg_strings):
             if not ko_str or ko_str.strip() == "":
                 continue
             kos = [k.strip() for k in ko_str.split(",") if k.strip()]
             for ko in kos:
-                idx = self._kegg_to_index(ko)
-                if 0 <= idx < self.n_kegg:
+                idx = self._kegg_to_index(ko, n_kegg)
+                if 0 <= idx < n_kegg:
                     targets[i, idx] = 1.0
         return targets
 
     def _parse_cog_labels(
-        self, cog_strings: list[str], device: torch.device
+        self, cog_strings: list[str], device: torch.device, n_cog: int
     ) -> torch.Tensor:
         """Parse COG category strings into multi-hot tensor.
 
         Args:
             cog_strings: List of COG strings like "G,E" or "".
             device: Target device for the tensor.
+            n_cog: Number of COG categories (inferred from predictions).
 
         Returns:
             (batch, n_cog) multi-hot float tensor.
         """
         batch_size = len(cog_strings)
-        targets = torch.zeros(batch_size, self.n_cog, dtype=torch.float, device=device)
+        targets = torch.zeros(batch_size, n_cog, dtype=torch.float, device=device)
 
         for i, cog_str in enumerate(cog_strings):
             if not cog_str or cog_str.strip() == "":
@@ -121,19 +123,23 @@ class TriFrameLoss(nn.Module):
             cats = [c.strip().upper() for c in cog_str.split(",") if c.strip()]
             for cat in cats:
                 idx = self._cog_to_index(cat)
-                if 0 <= idx < self.n_cog:
+                if 0 <= idx < n_cog:
                     targets[i, idx] = 1.0
         return targets
 
-    def _kegg_to_index(self, ko: str) -> int:
+    def _kegg_to_index(self, ko: str, n_kegg: int) -> int:
         """Convert KEGG KO ID (e.g., 'K00001') to index.
 
         Uses simple hash-based mapping for consistency.
+
+        Args:
+            ko: KEGG KO ID string.
+            n_kegg: Number of KEGG orthologs (for modulo operation).
         """
         try:
             if ko.startswith("K") and len(ko) >= 6:
                 num = int(ko[1:])
-                return num % self.n_kegg
+                return num % n_kegg
         except (ValueError, IndexError):
             pass
         return -1
@@ -228,7 +234,8 @@ class TriFrameLoss(nn.Module):
                 losses["ec"] = ec_loss_sum / ec_count
 
         # 4. KEGG loss - multi-label BCE
-        kegg_targets = self._parse_kegg_labels(labels["kegg_ko"], device)
+        n_kegg = predictions["kegg_logits"].shape[-1]
+        kegg_targets = self._parse_kegg_labels(labels["kegg_ko"], device, n_kegg)
         has_kegg = kegg_targets.sum(dim=1) > 0
         if has_kegg.any():
             kegg_logits_masked = predictions["kegg_logits"][has_kegg]
@@ -236,7 +243,8 @@ class TriFrameLoss(nn.Module):
             losses["kegg"] = self.kegg_criterion(kegg_logits_masked, kegg_targets_masked)
 
         # 5. COG loss - multi-label BCE
-        cog_targets = self._parse_cog_labels(labels["cog_category"], device)
+        n_cog = predictions["cog_logits"].shape[-1]
+        cog_targets = self._parse_cog_labels(labels["cog_category"], device, n_cog)
         has_cog = cog_targets.sum(dim=1) > 0
         if has_cog.any():
             cog_logits_masked = predictions["cog_logits"][has_cog]
