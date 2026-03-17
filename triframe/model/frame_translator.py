@@ -69,7 +69,7 @@ class SixFrameTranslator(nn.Module):
         usable = L - offset
         n_codons = usable // 3
 
-        if n_codons == 0:
+        if n_codons <= 0:
             aa_ids = nuc_ids.new_full((B, self.max_aa_length), PAD_ID)
             lengths = nuc_ids.new_zeros(B)
             return aa_ids, lengths
@@ -87,11 +87,10 @@ class SixFrameTranslator(nn.Module):
         actual_len = min(n_codons, self.max_aa_length)
         aa = aa[:, :actual_len]
 
+        # Always pad to exactly max_aa_length with PAD tokens
         if actual_len < self.max_aa_length:
             pad = nuc_ids.new_full((B, self.max_aa_length - actual_len), PAD_ID)
             aa = torch.cat([aa, pad], dim=1)
-        else:
-            aa = aa[:, : self.max_aa_length]
 
         lengths = torch.full((B,), actual_len, device=nuc_ids.device, dtype=torch.long)
         return aa, lengths

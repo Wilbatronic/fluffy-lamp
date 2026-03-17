@@ -2,7 +2,9 @@ README.md
 pyproject.toml
 tests/test_components.py
 tests/test_data.py
+tests/test_inference.py
 tests/test_model.py
+tests/test_training.py
 tests/test_translator.py
 triframe/__init__.py
 triframe.egg-info/PKG-INFO
@@ -14,6 +16,8 @@ triframe/data/__init__.py
 triframe/data/collator.py
 triframe/data/dataset.py
 triframe/data/tokenizer.py
+triframe/inference/__init__.py
+triframe/inference/predict.py
 triframe/model/__init__.py
 triframe/model/config.py
 triframe/model/cross_resolution.py
@@ -23,5 +27,10 @@ triframe/model/frame_translator.py
 triframe/model/heads.py
 triframe/model/nucleotide_encoder.py
 triframe/model/triframe.py
+triframe/training/__init__.py
+triframe/training/losses.py
+triframe/training/metrics.py
+triframe/training/scheduler.py
+triframe/training/trainer.py
 triframe/utils/__init__.py
 triframe/utils/codon_table.py
