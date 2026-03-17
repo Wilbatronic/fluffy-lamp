@@ -1,3 +1,17 @@
+Metadata-Version: 2.4
+Name: triframe
+Version: 0.1.0
+Summary: TriFrame: A Frame-Resolving Model for Assembly-Free Metagenomic Functional Annotation
+License-Expression: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: biopython>=1.80
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+
 # TriFrame: Assembly-Free Metagenomic Functional Annotation
 
 TriFrame is a deep learning model that takes raw metagenomic DNA reads (150–300 bp) and directly predicts functional annotations — EC numbers, KEGG orthologs, and COG categories — without requiring assembly, ORF prediction, or database alignment. The key challenge is that a random metagenomic read could originate from any of six reading frames (3 forward + 3 reverse complement) and may not even be protein-coding. TriFrame addresses this with two novel architectural components: **Frame Attention with Gating**, which learns to identify the correct coding frame(s), and **Cross-Resolution Attention**, which fuses nucleotide-level compositional signals with codon-level protein function signals at different granularities.
@@ -98,91 +112,15 @@ Standard approaches either pick one reading frame heuristically or ignore frame 
 
 DNA encodes function at two resolutions simultaneously: individual nucleotide patterns (GC content, regulatory motifs, dinucleotide frequencies) and codon-level patterns (amino acid identity, protein domains). Cross-Resolution Attention bridges these scales using learned query tokens conditioned on the frame representation that attend to the full nucleotide sequence via cross-attention. This lets the model learn wobble position effects (3rd codon position variability) and flanking regulatory signals.
 
-## Training
-
-### Generate Synthetic Data
-
-```bash
-python scripts/generate_synthetic_data.py \
-    --output-dir data/synthetic \
-    --n-sequences 10000 \
-    --min-length 150 \
-    --max-length 300 \
-    --seed 42
-```
-
-### Train the Model
-
-```bash
-python scripts/train.py \
-    --config configs/triframe_base.yaml \
-    --train-data data/synthetic/train.fasta \
-    --train-labels data/synthetic/train_labels.tsv \
-    --val-data data/synthetic/val.fasta \
-    --val-labels data/synthetic/val_labels.tsv \
-    --output-dir outputs/triframe_base \
-    --epochs 50 \
-    --batch-size 64 \
-    --lr 1e-4
-```
-
-Monitor progress in the console. The trainer uses mixed precision and gradient accumulation.
-
-## Evaluation
-
-```bash
-python scripts/evaluate.py \
-    --checkpoint outputs/triframe_base/best_model.pt \
-    --test-data data/synthetic/test.fasta \
-    --test-labels data/synthetic/test_labels.tsv
-```
-
-Outputs coding accuracy, frame accuracy, hierarchical EC accuracy, KEGG F1/Precision@k, and COG F1.
-
-## Inference
-
-```bash
-python scripts/predict.py \
-    --checkpoint outputs/triframe_base/best_model.pt \
-    --input reads.fasta \
-    --output predictions.tsv
-```
-
-## Comparison with Existing Tools
-
-| Feature | TriFrame | HUMAnN3 | DIAMOND+MEGAN | DeepFRI |
-|---------|----------|---------|---------------|---------|
-| **Input** | Raw reads | Raw reads | Raw reads | Proteins |
-| **Assembly Required** | No | No | No | Yes |
-| **Method** | Deep Learning | Alignment | Alignment | GCN |
-| **Speed** | Fast (GPU) | Slow | Medium | Fast (GPU) |
-| **Functional Coverage** | Learns patterns | DB-limited | DB-limited | Learns patterns |
-| **Frame-shift Aware** | Yes (novel) | No | No | N/A |
-
 ## Project Structure
 
 ```
 triframe/
 ├── model/         # Model architecture modules
 ├── data/          # Dataset, tokenizer, and collation utilities
-├── training/      # Training loop, losses, metrics, scheduler
-├── inference/     # Inference API and prediction utilities
 └── utils/         # Codon table and helpers
-scripts/           # CLI scripts for training, eval, inference
-examples/          # Usage examples
 configs/           # YAML configuration files
 tests/             # Pytest test suite
-```
-
-## Citation
-
-```bibtex
-@article{triframe2026,
-  title={TriFrame: Assembly-free functional annotation via frame-aware deep learning},
-  author={[Authors]},
-  journal={Bioinformatics},
-  year={2026}
-}
 ```
 
 ## License
